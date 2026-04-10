@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=48G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-891%10 
+#SBATCH --array=1-50%10 
 #SBATCH --output=logs/sra_%A_%a.log
 
 # load sra
