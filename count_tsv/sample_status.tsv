@@ -1,0 +1,5 @@
+sample	status	mode	message	count_tsv
+SRR38105543	SKIPPED	UNSUPPORTED	Unsupported FASTQ pattern; expected single file or _1/_2 pair	NA
+SRR38105544	SKIPPED	UNSUPPORTED	Unsupported FASTQ pattern; expected single file or _1/_2 pair	NA
+SRR38105545	SKIPPED	UNSUPPORTED	Unsupported FASTQ pattern; expected single file or _1/_2 pair	NA
+SRR38105545	SUCCESS	PAIRED	Completed successfully	/fs/scratch/PWSU0516/siva/ebola_class_project/count_tsv/SRR38105545.counts.tsv

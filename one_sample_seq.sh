@@ -15,7 +15,7 @@ module load star/2.7.11b
 module load fastqc/0.12.1
 
 PROJECT_DIR="${SLURM_SUBMIT_DIR}"
-ACCESSION=$(sed -n '4p' "${PROJECT_DIR}/srrAccession.txt" | tr -d '\r[:space:]')
+ACCESSION=$(sed -n '1p' "${PROJECT_DIR}/srrAccession.txt" | tr -d '\r[:space:]')
 
 STAR_BIN="STAR"
 FASTQC_BIN="fastqc"
