@@ -20,11 +20,11 @@ ACCESSION=$(sed -n '4p' "${PROJECT_DIR}/srrAccession.txt" | tr -d '\r[:space:]')
 STAR_BIN="STAR"
 FASTQC_BIN="fastqc"
 
-GENOME_DIR="/path/to/STAR_genome_index"
+GENOME_DIR="/fs/scratch/PWSU0516/siva/ebola_class_project/genome/macaque_index"
 
 # STAR ReadsPerGene.out.tab:
 # 2 = unstranded, 3 = forward-stranded, 4 = reverse-stranded
-COUNT_COLUMN=2
+COUNT_COLUMN=4
 
 STATUS_DIR="${PROJECT_DIR}/count_tsv"
 STATUS_FILE="${STATUS_DIR}/sample_status.tsv"
@@ -177,11 +177,10 @@ if [ ! -s "${COUNT_TSV}" ]; then
 fi
 
 if [ -f "${BAM_FILE}" ]; then
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}.fastq.gz"
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_1.fastq.gz"
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_2.fastq.gz"
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_3.fastq.gz"
+    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}*.fastq.gz"
     rm -rf "${PROJECT_DIR}/sra_files/${ACCESSION}"
+
+    rm -f "${BAM_FILE}"
     log_status "${ACCESSION}" "SUCCESS" "${MODE}" "Completed successfully" "${COUNT_TSV}"
     echo "Done: ${ACCESSION}"
 else
