@@ -3,7 +3,7 @@ An HPC pipeline for analyzing 50 SRR runs from the 2014 outbreak (PRJNA257197). 
 
 
 ## Overview
-**Dataset:** PRJNA257197 - 2014 West African Ebola Outbreak
+**Dataset:** PRJNA938511 - 2014 West African Ebola Outbreak
 **Scale:** For simplicity, collected only 50 SRR runs (441 MB SRA / ~ 2.1 GB FASTQ)
 **Workflow:**
 ```mermaid
