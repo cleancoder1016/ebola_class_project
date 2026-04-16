@@ -1,11 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=one_srr_ebola
+#SBATCH --job-name=ebola_batch
 #SBATCH --time=12:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=48G
 #SBATCH --account=PWSU0516
-#SBATCH --output=logs/%x_%j.log
+#SBATCH --array=5-356%5 
+#SBATCH --output=logs/%x_%A_%a.log
 
 set -euo pipefail
 
@@ -15,22 +16,20 @@ module load star/2.7.11b
 module load fastqc/0.12.1
 
 PROJECT_DIR="${SLURM_SUBMIT_DIR}"
-ACCESSION=$(sed -n '3p' "${PROJECT_DIR}/srrAccession.txt" | tr -d '\r[:space:]')
+
+ACCESSION=$(sed -n "${SLURM_ARRAY_TASK_ID}p" "${PROJECT_DIR}/srrAccession.txt" | tr -d '\r[:space:]')
 
 STAR_BIN="STAR"
 FASTQC_BIN="fastqc"
-
 GENOME_DIR="/fs/scratch/PWSU0516/siva/ebola_class_project/genome/macaque_index"
 
-# STAR ReadsPerGene.out.tab:
-# 2 = unstranded, 3 = forward-stranded, 4 = reverse-stranded
 COUNT_COLUMN=4
 
 STATUS_DIR="${PROJECT_DIR}/count_tsv"
 STATUS_FILE="${STATUS_DIR}/sample_status.tsv"
 
 if [ -z "${ACCESSION}" ]; then
-    echo "Error: first line of srrAccession.txt is empty"
+    echo "Error: line ${SLURM_ARRAY_TASK_ID} of srrAccession.txt is empty"
     exit 1
 fi
 
