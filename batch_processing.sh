@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=ebola_batch
-#SBATCH --time=12:00:00
+#SBATCH --time=16:00:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
-#SBATCH --mem=48G
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=64G
 #SBATCH --account=PWSU0516
-#SBATCH --array=5-356%5 
+#SBATCH --array=2-356%5 
 #SBATCH --output=logs/%x_%A_%a.log
 
 set -euo pipefail
@@ -14,6 +14,7 @@ module purge
 module load sratoolkit/3.0.2
 module load star/2.7.11b
 module load fastqc/0.12.1
+module load subread/2.0.8 # featurecounts
 
 PROJECT_DIR="${SLURM_SUBMIT_DIR}"
 
@@ -21,7 +22,9 @@ ACCESSION=$(sed -n "${SLURM_ARRAY_TASK_ID}p" "${PROJECT_DIR}/srrAccession.txt" |
 
 STAR_BIN="STAR"
 FASTQC_BIN="fastqc"
-GENOME_DIR="/fs/scratch/PWSU0516/siva/ebola_class_project/genome/macaque_index"
+FASTP_BIN="${PROJECT_DIR}/bin/fastp"
+GENOME_DIR="/fs/scratch/PWSU0516/siva/ebola_class_project/genome/hybrid_index"
+HYBRID_GTF="/fs/scratch/PWSU0516/siva/ebola_class_project/genome/hybrid_annotation.gtf"
 
 COUNT_COLUMN=4
 
@@ -37,7 +40,10 @@ mkdir -p \
     "${PROJECT_DIR}/logs" \
     "${PROJECT_DIR}/sra_files" \
     "${PROJECT_DIR}/fastq_outputs" \
-    "${PROJECT_DIR}/fastqc_reports/${ACCESSION}" \
+    "${PROJECT_DIR}/trimmed_fastq" \
+    "${PROJECT_DIR}/fastqc_reports/pre_trim/${ACCESSION}" \
+    "${PROJECT_DIR}/fastqc_reports/post_trim/${ACCESSION}" \
+    "${PROJECT_DIR}/fastp_reports/${ACCESSION}" \
     "${PROJECT_DIR}/star_alignments/${ACCESSION}" \
     "${PROJECT_DIR}/count_tsv" \
     "${PROJECT_DIR}/tmp"
@@ -52,11 +58,10 @@ mkdir -p "${JOB_TMP}"
 cleanup() {
     [ -n "${ACCESSION:-}" ] || return 0
 
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}.fastq.gz" 2>/dev/null || true
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_1.fastq.gz" 2>/dev/null || true
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_2.fastq.gz" 2>/dev/null || true
-    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_3.fastq.gz" 2>/dev/null || true
+    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}*.fastq" 2>/dev/null || true
+    rm -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}*.fastq.gz" 2>/dev/null || true
     rm -rf "${PROJECT_DIR}/sra_files/${ACCESSION}" 2>/dev/null || true
+    rm -rf "${PROJECT_DIR}/star_alignments/${ACCESSION}/_STARtmp" 2>/dev/null || true
 }
 
 trap cleanup EXIT
@@ -107,10 +112,23 @@ else
         xargs -0 -r -n 1 gzip
 fi
 
-R1="${PROJECT_DIR}/fastq_outputs/${ACCESSION}_1.fastq.gz"
-R2="${PROJECT_DIR}/fastq_outputs/${ACCESSION}_2.fastq.gz"
-R3="${PROJECT_DIR}/fastq_outputs/${ACCESSION}_3.fastq.gz"
-SE="${PROJECT_DIR}/fastq_outputs/${ACCESSION}.fastq.gz"
+R1_RAW="${PROJECT_DIR}/fastq_outputs/${ACCESSION}_1.fastq.gz"
+
+if [ -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_3.fastq.gz" ]; then
+    R2_RAW="${PROJECT_DIR}/fastq_outputs/${ACCESSION}_3.fastq.gz"
+    echo "Detected paired reads as _1 and _3"
+elif [ -f "${PROJECT_DIR}/fastq_outputs/${ACCESSION}_2.fastq.gz" ]; then
+    R2_RAW="${PROJECT_DIR}/fastq_outputs/${ACCESSION}_2.fastq.gz"
+    echo "Detected paired reads as _1 and _2"
+else
+    R2_RAW="MISSING"
+fi
+
+SE_RAW="${PROJECT_DIR}/fastq_outputs/${ACCESSION}.fastq.gz"
+
+# trimmed outputs
+R1_TRIM="${PROJECT_DIR}/trimmed_fastq/${ACCESSION}_1_trim.fastq.gz"
+R2_TRIM="${PROJECT_DIR}/trimmed_fastq/${ACCESSION}_2_trim.fastq.gz"
 
 COUNT_TSV="${PROJECT_DIR}/count_tsv/${ACCESSION}.counts.tsv"
 COUNTS_FILE="${PROJECT_DIR}/star_alignments/${ACCESSION}/${ACCESSION}.ReadsPerGene.out.tab"
@@ -118,45 +136,49 @@ BAM_FILE="${PROJECT_DIR}/star_alignments/${ACCESSION}/${ACCESSION}.Aligned.sorte
 
 MODE="NA"
 
-if [ -f "${R1}" ] && [ -f "${R2}" ]; then
+if [ -f "${R1_RAW}" ] && [ -f "${R2_RAW}" ]; then
     MODE="PAIRED"
 
+    # pre-trim fastqc
     "${FASTQC_BIN}" -t "${SLURM_CPUS_PER_TASK}" \
-        -o "${PROJECT_DIR}/fastqc_reports/${ACCESSION}" \
-        "${R1}" "${R2}"
+        -o "${PROJECT_DIR}/fastqc_reports/pre_trim/${ACCESSION}" \
+        "${R1_RAW}" "${R2_RAW}"
+
+    # trimming
+    "${FASTP_BIN}" --thread "${SLURM_CPUS_PER_TASK}" \
+        -i "${R1_RAW}" -I "${R2_RAW}" \
+        -o "${R1_TRIM}" -O "${R2_TRIM}" \
+        --umi --umi_loc=read1 --umi_len=12 \
+        --html "${PROJECT_DIR}/fastp_reports/${ACCESSION}/${ACCESSION}.fastp.html" \
+        --json "${PROJECT_DIR}/fastp_reports/${ACCESSION}/${ACCESSION}.fastp.json"
+
+    # post-trim QC
+    "${FASTQC_BIN}" -t "${SLURM_CPUS_PER_TASK}" \
+        -o "${PROJECT_DIR}/fastqc_reports/post_trim/${ACCESSION}" \
+        "${R1_TRIM}" "${R2_TRIM}"
+
 
     "${STAR_BIN}" \
         --runThreadN "${SLURM_CPUS_PER_TASK}" \
         --genomeDir "${GENOME_DIR}" \
-        --readFilesIn "${R1}" "${R2}" \
+        --readFilesIn "${R1_TRIM}" "${R2_TRIM}" \
         --readFilesCommand zcat \
         --outFileNamePrefix "${PROJECT_DIR}/star_alignments/${ACCESSION}/${ACCESSION}." \
         --outSAMtype BAM SortedByCoordinate \
+        --outSAMattributes NH HI AS nM NM MD \
         --quantMode GeneCounts \
         --seedSearchStartLmax 1
 
-elif [ -f "${SE}" ] && [ ! -f "${R1}" ] && [ ! -f "${R2}" ] && [ ! -f "${R3}" ]; then
+elif [ -f "${SE_RAW}" ] && [ ! -f "${R1_RAW}" ]; then
     MODE="SINGLE"
 
-    "${FASTQC_BIN}" -t "${SLURM_CPUS_PER_TASK}" \
-        -o "${PROJECT_DIR}/fastqc_reports/${ACCESSION}" \
-        "${SE}"
-
-    "${STAR_BIN}" \
-        --runThreadN "${SLURM_CPUS_PER_TASK}" \
-        --genomeDir "${GENOME_DIR}" \
-        --readFilesIn "${SE}" \
-        --readFilesCommand zcat \
-        --outFileNamePrefix "${PROJECT_DIR}/star_alignments/${ACCESSION}/${ACCESSION}." \
-        --outSAMtype BAM SortedByCoordinate \
-        --quantMode GeneCounts \
-        --seedSearchStartLmax 1
+    log_status "${ACCESSION}" "SKIPPED" "${MODE}" "Script optimized for Paired-End" "NA"
+    exit 0
 
 else
     MODE="UNSUPPORTED"
-    MESSAGE="Unsupported FASTQ pattern; expected single file or _1/_2 pair"
+    MESSAGE="Unsupported FASTQ pattern; expected single file or _1/_3 pair"
     echo "${MESSAGE}"
-    ls -1 "${PROJECT_DIR}/fastq_outputs/${ACCESSION}"*.fastq.gz 2>/dev/null || true
     log_status "${ACCESSION}" "SKIPPED" "${MODE}" "${MESSAGE}" "NA"
     exit 0
 fi
