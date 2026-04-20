@@ -43,12 +43,14 @@ echo "Processing merged sample: ${SAMPLE_NAME}"
 echo "Lanes (${#SRR_LIST[@]}): ${SRR_LIST[*]}"
 
 FASTQ_OUT="${PROJECT_DIR}/fastq_outputs/${SAMPLE_NAME}"
+LANES_DIR="${FASTQ_OUT}/lanes"          # per-SRR lane files land here — no name clash with merged
 TRIM_OUT="${PROJECT_DIR}/trimmed_fastq/${SAMPLE_NAME}"
 
 mkdir -p \
     "${PROJECT_DIR}/logs" \
     "${PROJECT_DIR}/sra_files" \
     "${FASTQ_OUT}" \
+    "${LANES_DIR}" \
     "${TRIM_OUT}" \
     "${PROJECT_DIR}/fastqc_reports/pre_trim/${SAMPLE_NAME}" \
     "${PROJECT_DIR}/fastqc_reports/post_trim/${SAMPLE_NAME}" \
@@ -106,15 +108,15 @@ for SRR in "${SRR_LIST[@]}"; do
     fasterq-dump "${SRA_PATH}" \
         --split-3 \
         -e "${SLURM_CPUS_PER_TASK}" \
-        -O "${FASTQ_OUT}/" \
+        -O "${LANES_DIR}/" \
         -t "${JOB_TMP}"
 
     # Compress immediately to save disk
     if command -v pigz >/dev/null 2>&1; then
-        find "${FASTQ_OUT}" -maxdepth 1 -type f -name "${SRR}*.fastq" -print0 | \
+        find "${LANES_DIR}" -maxdepth 1 -type f -name "${SRR}*.fastq" -print0 | \
             xargs -0 -r -n 1 -P "${SLURM_CPUS_PER_TASK}" pigz
     else
-        find "${FASTQ_OUT}" -maxdepth 1 -type f -name "${SRR}*.fastq" -print0 | \
+        find "${LANES_DIR}" -maxdepth 1 -type f -name "${SRR}*.fastq" -print0 | \
             xargs -0 -r -n 1 gzip
     fi
 
@@ -127,10 +129,10 @@ FIRST="${SRR_LIST[0]}"
 R1_MERGED="${FASTQ_OUT}/${SAMPLE_NAME}_1.fastq.gz"
 R2_MERGED="${FASTQ_OUT}/${SAMPLE_NAME}_2.fastq.gz"
 
-if [ -f "${FASTQ_OUT}/${FIRST}_3.fastq.gz" ]; then
+if [ -f "${LANES_DIR}/${FIRST}_3.fastq.gz" ]; then
     PAIR_SUFFIX="3"
     echo "  Detected paired pattern: _1 and _3"
-elif [ -f "${FASTQ_OUT}/${FIRST}_2.fastq.gz" ]; then
+elif [ -f "${LANES_DIR}/${FIRST}_2.fastq.gz" ]; then
     PAIR_SUFFIX="2"
     echo "  Detected paired pattern: _1 and _2"
 else
@@ -142,8 +144,8 @@ fi
 R1_LANES=()
 R2_LANES=()
 for SRR in "${SRR_LIST[@]}"; do
-    f1="${FASTQ_OUT}/${SRR}_1.fastq.gz"
-    f2="${FASTQ_OUT}/${SRR}_${PAIR_SUFFIX}.fastq.gz"
+    f1="${LANES_DIR}/${SRR}_1.fastq.gz"
+    f2="${LANES_DIR}/${SRR}_${PAIR_SUFFIX}.fastq.gz"
     if [ ! -f "$f1" ] || [ ! -f "$f2" ]; then
         log_status "${SAMPLE_NAME}" "FAILED" "PAIRED" "Missing FASTQ for lane ${SRR}" "NA"
         echo "Error: expected ${f1} and ${f2}"
