@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=48G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-50%10
+#SBATCH --array=1-356%10
 #SBATCH --output=logs/01_sra2fq_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 01_sra_to_fastq.sh — Convert SRA files to FASTQ (with retry + checkpointing)
@@ -42,7 +42,7 @@ fi
 # ── Convert to FASTQ ────────────────────────────────────────────────────────
 log_info "Converting SRA → FASTQ with fasterq-dump..."
 fasterq-dump "${SRA_DIR}/${SRR}/${SRR}.sra" \
-    --split-files \
+    --split-3 \
     -e "${THREADS}" \
     -O "${FASTQ_DIR}/${SRR}" \
     --temp "${PROJECT_DIR}" \

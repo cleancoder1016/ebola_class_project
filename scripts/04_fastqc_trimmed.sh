@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-50%10
+#SBATCH --array=1-356%10
 #SBATCH --output=logs/04_fastqc_trim_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 04_fastqc_trimmed.sh — Quality control on trimmed FASTQ reads

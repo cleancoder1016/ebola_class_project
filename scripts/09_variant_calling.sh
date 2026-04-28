@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-50%10
+#SBATCH --array=1-356%10
 #SBATCH --output=logs/09_variants_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 09_variant_calling.sh — Per-sample variant calling with bcftools + SnpEff
