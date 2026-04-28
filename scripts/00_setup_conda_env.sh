@@ -39,11 +39,11 @@ module load "${MOD_CONDA}"
 if conda env list | grep -q "^${CONDA_ENV} "; then
     log_info "Conda environment '${CONDA_ENV}' already exists. Updating..."
     conda install -n "${CONDA_ENV}" -y -c bioconda -c conda-forge \
-        subread multiqc gffread
+        subread multiqc gffread kallisto pandas matplotlib seaborn
 else
     log_info "Creating conda environment '${CONDA_ENV}'..."
     conda create -n "${CONDA_ENV}" -y -c bioconda -c conda-forge \
-        python=3.10 subread multiqc gffread
+        python=3.10 subread multiqc gffread kallisto pandas matplotlib seaborn
 fi
 
 # ── Verify installation ────────────────────────────────────────────────────
