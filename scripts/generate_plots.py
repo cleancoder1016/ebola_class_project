@@ -31,8 +31,8 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 
-COUNTS_FILE = os.path.join(PROJECT_DIR, "counts", "gene_counts_clean.txt")
-KALLISTO_FILE = os.path.join(PROJECT_DIR, "kallisto_output", "count_matrix_kallisto.csv")
+COUNTS_FILE = os.path.join(PROJECT_DIR, "counts_git", "gene_counts_clean.txt")
+KALLISTO_FILE = os.path.join(PROJECT_DIR, "kallisto_git", "count_matrix_kallisto.csv")
 OUTPUT_DIR = os.path.join(PROJECT_DIR, "report", "figures")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)

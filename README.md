@@ -15,38 +15,39 @@ An end-to-end HPC pipeline for analyzing 356 SRA runs from the 2014 West African
 
 ## Data Scale
 
-| Stage | Size | Count |
+| Output | File Count | Description |
 |---|---|---|
-| Total pipeline data | **2.7 TB** | — |
-| Trimmed FASTQ | 603 GB | 344 samples × 2 paired files |
-| Aligned BAMs (deduplicated) | 475 GB | 344 BAM files |
-| featureCounts matrix | 7 genes × 276 samples | 276 paired-end validated |
-| Kallisto matrix | 7 genes × 344 samples | 344 samples |
-| Variant calls | 344 VCF files | per-sample filtered VCFs |
+| Raw data | 296 SRA files | downloaded from NCBI |
+| FastQC | 592 reports | pre- and post-trimming |
+| Trimmed FASTQ | 592 files | paired-end reads |
+| Alignments | 296 BAM files | aligned to `KJ660346.2` |
+| Feature Counts | 1 matrix | gene-level quantification |
+| Kallisto quant | 296 directories | transcript-level quantification |
+| Variant calls | 296 VCF files | per-sample filtered VCFs |
 
 ## Pipeline Results
 
 | Metric | Value |
 |---|---|
-| SRA runs downloaded | 344 / 356 (96.6%) |
-| FastQC reports generated | 576 (raw + trimmed) |
-| Trimmed paired FASTQ files | 688 |
-| Deduplicated BAM files | 344 |
-| Paired-end BAMs (featureCounts input) | 276 |
+| SRA runs downloaded | 356 (merged to 296 biological samples) |
+| FastQC reports generated | 592 (raw + trimmed) |
+| Trimmed paired FASTQ files | 592 |
+| Deduplicated BAM files | 296 |
+| Paired-end BAMs (featureCounts input) | 245 |
 | Ebola genes quantified | 7 (NP, VP35, VP40, GP, VP30, VP24, L) |
 | Total assigned Ebola read pairs | 15,131,200 |
-| Samples with detectable virus | 177 / 276 (64.1%) |
-| Samples with filtered variants | 119 / 344 (34.6%) |
-| Total filtered SNPs | 33,097 |
+| Samples with detectable virus | 157 / 245 (64.1%) |
+| Samples with filtered variants | 111 / 296 (37.5%) |
+| Total filtered SNPs | 31,786 |
 | Total filtered Indels | 4 |
-| Median reads per sample | 17 |
+| Median reads per sample | 14 |
 | Max reads per sample | 3,678,592 (SRR38105630) |
 | Kallisto vs featureCounts correlation (per-sample) | r = 0.9978 |
 | Kallisto vs featureCounts correlation (per-gene) | r = 0.9569 |
 | Gene-gene co-expression | All pairwise r ≥ 0.97 |
 | Publication figures generated | 14 |
 
-### Per-Gene Expression (featureCounts, 276 samples)
+### Per-Gene Expression (featureCounts, 245 samples)
 
 | Gene | Function | Total Read Pairs | % of Total |
 |---|---|---:|---:|
@@ -148,25 +149,25 @@ python3 scripts/generate_plots_v2.py  # 7 additional figures
 
 | File | Format | Dimensions | Description |
 |------|--------|-----------|-------------|
-| `gene_counts_clean.txt` | TSV | 7 rows × 277 cols (1 gene ID + 276 samples) | Cleaned gene-level read pair counts. Rows: NP, VP35, VP40, GP, VP30, VP24, L. Columns: one per paired-end BAM sample. |
-| `gene_counts.txt.summary` | TSV | 14 status rows × 277 cols | featureCounts assignment summary per sample. Categories: Assigned, Unassigned_Unmapped, Unassigned_NoFeatures, Unassigned_Ambiguity, etc. |
+| `gene_counts_clean.txt` | TSV | 7 rows × 246 cols (1 gene ID + 245 samples) | Cleaned gene-level read pair counts. Rows: NP, VP35, VP40, GP, VP30, VP24, L. Columns: one per paired-end BAM sample. |
+| `gene_counts.txt.summary` | TSV | 14 status rows × 246 cols | featureCounts assignment summary per sample. Categories: Assigned, Unassigned_Unmapped, Unassigned_NoFeatures, Unassigned_Ambiguity, etc. |
 
 ### Kallisto (`kallisto_git/`)
 
 | File | Format | Dimensions | Description |
 |------|--------|-----------|-------------|
-| `count_matrix_kallisto.csv` | CSV | 7 rows × 345 cols (1 gene ID + 344 samples) | Estimated read counts per gene from Kallisto pseudo-alignment. Genes: GP, L, NP, VP24, VP30, VP35, VP40. |
-| `tpm_matrix_kallisto.csv` | CSV | 7 rows × 345 cols (1 gene ID + 344 samples) | Transcripts Per Million (TPM) values, length-normalized expression for cross-sample comparison. |
+| `count_matrix_kallisto.csv` | CSV | 7 rows × 297 cols (1 gene ID + 296 samples) | Estimated read counts per gene from Kallisto pseudo-alignment. Genes: GP, L, NP, VP24, VP30, VP35, VP40. |
+| `tpm_matrix_kallisto.csv` | CSV | 7 rows × 297 cols (1 gene ID + 296 samples) | Transcripts Per Million (TPM) values, length-normalized expression for cross-sample comparison. |
 
 ### DESeq2 (`deseq2_git/`)
 
 | File | Format | Description |
 |------|--------|-------------|
-| `summary_statistics.csv` | CSV | Pipeline summary: 7 genes, 276 samples, 15,131,200 total assigned reads, mean 54,823 reads/sample, median 14 reads/sample. |
-| `library_sizes.csv` | CSV | Per-sample library sizes (total assigned reads) for 276 samples. |
+| `summary_statistics.csv` | CSV | Pipeline summary: 7 genes, 245 samples, 15,131,200 total assigned reads, mean 61,760 reads/sample, median 14 reads/sample. |
+| `library_sizes.csv` | CSV | Per-sample library sizes (total assigned reads) for 245 samples. |
 | `pca_plot.pdf` | PDF | PCA of variance-stabilized counts. PC1 separates high vs low viral load samples. |
 | `pca_plot.png` | PNG | Same PCA plot in raster format. |
-| `sample_distance_heatmap.pdf` | PDF | Euclidean distance heatmap between all 276 samples (VST-transformed). |
+| `sample_distance_heatmap.pdf` | PDF | Euclidean distance heatmap between all 245 samples (VST-transformed). |
 | `top_variable_genes_heatmap.pdf` | PDF | Heatmap of all 7 Ebola genes across all samples. |
 | `expression_distribution.pdf` | PDF | Histogram of VST-normalized expression values. |
 
@@ -174,7 +175,7 @@ python3 scripts/generate_plots_v2.py  # 7 additional figures
 
 | File | Format | Description |
 |------|--------|-------------|
-| `variant_summary.tsv` | TSV | Aggregated variant counts (raw, filtered, SNPs, Indels) for all 344 samples. |
+| `variant_summary.tsv` | TSV | Aggregated variant counts (raw, filtered, SNPs, Indels) for all 296 biological samples. |
 
 
 ## Generated Figures

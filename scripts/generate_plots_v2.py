@@ -165,7 +165,7 @@ def plot_dendrogram(fc_genes, samples):
 # ═══════════════════════════════════════════════════════════════
 def plot_variant_summary():
     print("[4/7] Variant summary...")
-    var_file = os.path.join(PROJECT, "variants", "variant_summary.tsv")
+    var_file = os.path.join(PROJECT, "variants_git", "variant_summary.tsv")
     if not os.path.exists(var_file):
         print("  [WARN] variant_summary.tsv not found, skipping")
         return
@@ -214,7 +214,7 @@ def plot_variant_summary():
 # ═══════════════════════════════════════════════════════════════
 def plot_assignment_summary():
     print("[5/7] featureCounts assignment summary...")
-    summary_file = os.path.join(PROJECT, "counts", "gene_counts.txt.summary")
+    summary_file = os.path.join(PROJECT, "counts_git", "gene_counts.txt.summary")
     if not os.path.exists(summary_file):
         print("  [WARN] gene_counts.txt.summary not found, skipping")
         return
@@ -337,8 +337,8 @@ if __name__ == "__main__":
     print("  Ebola Pipeline — Additional Publication Figures (v2)")
     print("═" * 60 + "\n")
     
-    fc_file = os.path.join(PROJECT, "counts", "gene_counts_clean.txt")
-    kal_file = os.path.join(PROJECT, "kallisto_output", "count_matrix_kallisto.csv")
+    fc_file = os.path.join(PROJECT, "counts_git", "gene_counts_clean.txt")
+    kal_file = os.path.join(PROJECT, "kallisto_git", "count_matrix_kallisto.csv")
     
     fc_genes, fc_samples = load_counts(fc_file)
     print(f"[INFO] featureCounts: {len(fc_genes)} genes × {len(fc_samples)} samples")
