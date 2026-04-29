@@ -45,7 +45,7 @@ while IFS= read -r SRR; do
         BAM_FILES+=("$BAM")
     else
         log_warn "BAM not found for ${SRR}, skipping."
-        (( MISSING++ ))
+        (( MISSING++ )) || true
     fi
 done < "${ACCESSION_LIST}"
 

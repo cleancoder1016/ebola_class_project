@@ -47,25 +47,52 @@ MACAQUE_GTF_GZ="${HYBRID_GENOME_DIR}/macaque_genomic.gtf.gz"
 MACAQUE_GTF="${HYBRID_GENOME_DIR}/macaque_genomic.gtf"
 
 # ── Step 1: Download macaque genome FASTA ───────────────────────────────────
-if [[ -f "${MACAQUE_FASTA}" ]]; then
-    log_info "Macaque FASTA already downloaded."
+if [[ -f "${MACAQUE_FASTA}" ]] && [[ $(stat -c%s "${MACAQUE_FASTA}") -gt 100000000 ]]; then
+    log_info "Macaque FASTA already downloaded ($(du -h "${MACAQUE_FASTA}" | cut -f1))."
 else
     log_info "Downloading macaque genome (Mmul_10, GCF_003339765.3)..."
-    retry 3 curl -sS -L -o "${MACAQUE_FASTA_GZ}" "${MACAQUE_FASTA_URL}"
-    validate_files "${MACAQUE_FASTA_GZ}"
+    rm -f "${MACAQUE_FASTA_GZ}" "${MACAQUE_FASTA}"  # Clean stale files
+
+    # Use --fail to detect HTTP errors, --retry for transient failures
+    retry 3 curl --fail -L --retry 3 --retry-delay 10 \
+        -o "${MACAQUE_FASTA_GZ}" "${MACAQUE_FASTA_URL}"
+
+    # Validate download size (macaque genome .fna.gz should be ~800MB+)
+    DOWNLOAD_SIZE=$(stat -c%s "${MACAQUE_FASTA_GZ}" 2>/dev/null || echo 0)
+    if (( DOWNLOAD_SIZE < 100000000 )); then
+        log_error "Downloaded file too small (${DOWNLOAD_SIZE} bytes). Likely an error page."
+        rm -f "${MACAQUE_FASTA_GZ}"
+
+        # Fallback: try wget
+        log_info "Trying wget as fallback..."
+        retry 3 wget -q -O "${MACAQUE_FASTA_GZ}" "${MACAQUE_FASTA_URL}"
+        DOWNLOAD_SIZE=$(stat -c%s "${MACAQUE_FASTA_GZ}" 2>/dev/null || echo 0)
+        if (( DOWNLOAD_SIZE < 100000000 )); then
+            die "Macaque genome download failed. File too small: ${DOWNLOAD_SIZE} bytes."
+        fi
+    fi
+    log_info "Download complete: $(du -h "${MACAQUE_FASTA_GZ}" | cut -f1)"
+
     log_info "Decompressing macaque FASTA..."
     gunzip -f "${MACAQUE_FASTA_GZ}"
     validate_files "${MACAQUE_FASTA}"
-    log_info "Macaque FASTA ready: $(wc -c < "${MACAQUE_FASTA}") bytes"
+    log_info "Macaque FASTA ready: $(du -h "${MACAQUE_FASTA}" | cut -f1)"
 fi
 
 # ── Step 2: Download macaque GTF annotation ─────────────────────────────────
-if [[ -f "${MACAQUE_GTF}" ]]; then
-    log_info "Macaque GTF already downloaded."
+if [[ -f "${MACAQUE_GTF}" ]] && [[ $(stat -c%s "${MACAQUE_GTF}") -gt 10000000 ]]; then
+    log_info "Macaque GTF already downloaded ($(du -h "${MACAQUE_GTF}" | cut -f1))."
 else
     log_info "Downloading macaque GTF annotation..."
-    retry 3 curl -sS -L -o "${MACAQUE_GTF_GZ}" "${MACAQUE_GTF_URL}"
-    validate_files "${MACAQUE_GTF_GZ}"
+    rm -f "${MACAQUE_GTF_GZ}" "${MACAQUE_GTF}"
+    retry 3 curl --fail -L --retry 3 --retry-delay 10 \
+        -o "${MACAQUE_GTF_GZ}" "${MACAQUE_GTF_URL}"
+
+    DOWNLOAD_SIZE=$(stat -c%s "${MACAQUE_GTF_GZ}" 2>/dev/null || echo 0)
+    if (( DOWNLOAD_SIZE < 1000000 )); then
+        die "GTF download failed. File too small: ${DOWNLOAD_SIZE} bytes."
+    fi
+
     log_info "Decompressing macaque GTF..."
     gunzip -f "${MACAQUE_GTF_GZ}"
     validate_files "${MACAQUE_GTF}"
