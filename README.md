@@ -142,23 +142,40 @@ python3 scripts/generate_plots.py     # 6 core figures
 python3 scripts/generate_plots_v2.py  # 7 additional figures
 ```
 
-## Output Directories
+## Output Data Files
 
-| Directory | Contents |
-|---|---|
-| `counts/gene_counts.txt` | Raw featureCounts output (7 genes × 276 samples) |
-| `counts/gene_counts_clean.txt` | Cleaned count matrix (header + counts only) |
-| `counts/gene_counts.txt.summary` | featureCounts assignment summary |
-| `kallisto_output/SRR*/abundance.tsv` | Per-sample Kallisto abundance files |
-| `kallisto_output/count_matrix_kallisto.csv` | Aggregated Kallisto count matrix (7 genes × 344 samples) |
-| `kallisto_output/tpm_matrix_kallisto.csv` | Aggregated Kallisto TPM matrix |
-| `variants/SRR*/` | Per-sample VCF, consensus FASTA, bcftools stats |
-| `variants/variant_summary.tsv` | Variant counts per sample (SNPs, Indels) |
-| `deseq2_results/` | PCA plot, sample distance heatmap, expression distributions |
-| `report/figures/` | 14 publication-quality PNG figures |
-| `report/mufakir_sections.md` | Report draft sections |
-| `logs/` | Per-step SLURM output logs |
-| `.checkpoints/` | Checkpoint files for resume support |
+### featureCounts (`counts_git/`)
+
+| File | Format | Dimensions | Description |
+|------|--------|-----------|-------------|
+| `gene_counts_clean.txt` | TSV | 7 rows × 277 cols (1 gene ID + 276 samples) | Cleaned gene-level read pair counts. Rows: NP, VP35, VP40, GP, VP30, VP24, L. Columns: one per paired-end BAM sample. |
+| `gene_counts.txt.summary` | TSV | 14 status rows × 277 cols | featureCounts assignment summary per sample. Categories: Assigned, Unassigned_Unmapped, Unassigned_NoFeatures, Unassigned_Ambiguity, etc. |
+
+### Kallisto (`kallisto_git/`)
+
+| File | Format | Dimensions | Description |
+|------|--------|-----------|-------------|
+| `count_matrix_kallisto.csv` | CSV | 7 rows × 345 cols (1 gene ID + 344 samples) | Estimated read counts per gene from Kallisto pseudo-alignment. Genes: GP, L, NP, VP24, VP30, VP35, VP40. |
+| `tpm_matrix_kallisto.csv` | CSV | 7 rows × 345 cols (1 gene ID + 344 samples) | Transcripts Per Million (TPM) values, length-normalized expression for cross-sample comparison. |
+
+### DESeq2 (`deseq2_git/`)
+
+| File | Format | Description |
+|------|--------|-------------|
+| `summary_statistics.csv` | CSV | Pipeline summary: 7 genes, 276 samples, 15,131,200 total assigned reads, mean 54,823 reads/sample, median 14 reads/sample. |
+| `library_sizes.csv` | CSV | Per-sample library sizes (total assigned reads) for 276 samples. |
+| `pca_plot.pdf` | PDF | PCA of variance-stabilized counts. PC1 separates high vs low viral load samples. |
+| `pca_plot.png` | PNG | Same PCA plot in raster format. |
+| `sample_distance_heatmap.pdf` | PDF | Euclidean distance heatmap between all 276 samples (VST-transformed). |
+| `top_variable_genes_heatmap.pdf` | PDF | Heatmap of all 7 Ebola genes across all samples. |
+| `expression_distribution.pdf` | PDF | Histogram of VST-normalized expression values. |
+
+### Variants (`variants_git/`)
+
+| File | Format | Description |
+|------|--------|-------------|
+| `variant_summary.tsv` | TSV | Aggregated variant counts (raw, filtered, SNPs, Indels) for all 344 samples. |
+
 
 ## Generated Figures
 
