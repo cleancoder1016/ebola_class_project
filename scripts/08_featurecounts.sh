@@ -44,9 +44,9 @@ while IFS= read -r SRR; do
         BAM="${ALIGNED_DIR}/${SRR}/${SRR}.sorted.bam"
     fi
     if [[ -f "$BAM" ]]; then
-        # Verify BAM has paired-end reads (featureCounts -p crashes on single-end)
-        PAIRED_COUNT=$(samtools view -c -f 1 "$BAM" 2>/dev/null | head -1 || echo 0)
-        if (( PAIRED_COUNT > 0 )); then
+        # Quick check: read just 1 paired-end read (instant vs counting all reads)
+        HAS_PAIRED=$(samtools view -f 1 "$BAM" 2>/dev/null | head -1 | wc -l)
+        if (( HAS_PAIRED > 0 )); then
             BAM_FILES+=("$BAM")
         else
             log_warn "BAM for ${SRR} has no paired-end reads, skipping."
