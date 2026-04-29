@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=48G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-356%10
+#SBATCH --array=1-356%15
 #SBATCH --output=logs/16_hybrid_hisat2_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 16_hybrid_hisat2_align.sh — Align trimmed reads to hybrid genome

@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=16G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-356%10
+#SBATCH --array=1-356%25
 #SBATCH --output=logs/03_trimmomatic_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 03_trimmomatic.sh — Adapter removal and quality trimming (paired-end)

@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-356%10
+#SBATCH --array=1-356%50
 #SBATCH --output=logs/13_kallisto_quant_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 13_kallisto_quant.sh — Pseudo-alignment and quantification with Kallisto

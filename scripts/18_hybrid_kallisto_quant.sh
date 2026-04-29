@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-356%10
+#SBATCH --array=1-356%25
 #SBATCH --output=logs/18_hybrid_kallisto_quant_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 18_hybrid_kallisto_quant.sh — Pseudo-alignment with Kallisto against hybrid

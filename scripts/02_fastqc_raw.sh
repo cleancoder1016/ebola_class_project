@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-356%10
+#SBATCH --array=1-356%50
 #SBATCH --output=logs/02_fastqc_raw_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 02_fastqc_raw.sh — Quality control on raw FASTQ reads
