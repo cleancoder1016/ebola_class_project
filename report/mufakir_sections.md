@@ -95,5 +95,40 @@ The low Ebola detection rate (64.1% of samples with >0 reads, 99.7% of aligned r
 
 A limitation of this analysis is the absence of sample metadata (clinical condition, time point, outcome). DESeq2 was therefore run in exploratory mode only. The 68 single-end BAM files excluded from featureCounts may represent samples with different library preparation protocols.
 
+## Hybrid Genome Pipeline (Not Executed)
+The repository includes a complete hybrid genome analysis pipeline (Steps 15–19) that was implemented but not executed in this run due to compute time constraints. This pipeline is designed to re-align reads against a combined human + Ebola reference genome to more accurately separate host and viral reads. The scripts are:
+
+- **Step 15 (`15_hybrid_genome_build.sh`)**: Downloads the human reference genome (GRCh38) and concatenates it with the Ebola reference (KJ660346.2) to build a hybrid HISAT2 index.
+- **Step 16 (`16_hybrid_hisat2_align.sh`)**: Re-aligns all trimmed reads to the hybrid human+Ebola genome using HISAT2, then extracts only Ebola-mapped reads.
+- **Step 17 (`17_hybrid_featurecounts.sh`)**: Runs featureCounts on the hybrid-aligned BAMs using the Ebola GTF annotation.
+- **Step 18 (`18_hybrid_kallisto_quant.sh`)**: Runs Kallisto quantification against a hybrid human+Ebola transcriptome index.
+- **Step 19 (`19_hybrid_kallisto_aggregate.sh`)**: Aggregates hybrid Kallisto output into count and TPM matrices.
+
+The hybrid approach would allow comparison of Ebola-only alignment (current analysis) versus hybrid alignment to assess whether host-genome competition affects viral transcript quantification. These steps can be executed by running:
+```bash
+sbatch coordinator.sh --start-from 15
+```
+
+## Additional Repository Scripts
+The repository also contains the following utility and orchestration scripts:
+
+| Script | Purpose |
+|--------|---------|
+| `coordinator.sh` | Sequential pipeline orchestrator with `--start-from` and `--stop-at` flags |
+| `run_and_verify.sh` | Pipeline verification and git push utility |
+| `batch_merge_processing.sh` | Identifies and concatenates multi-run biological replicates (66 SRR runs) |
+| `submit_merge_jobs.sh` | SLURM submission wrapper for merge jobs |
+| `batch_processing.sh` | Batch SLURM array submission for core pipeline |
+| `one_sample_seq.sh` | Single-sample sequential processing for testing |
+| `sra_to_fastq.sh` | Standalone SRA-to-FASTQ conversion script |
+| `scripts/utils.sh` | Shared utility functions (logging, checkpointing, validation) |
+| `scripts/deseq2_analysis.R` | DESeq2 exploratory analysis (PCA, heatmaps, variance stabilization) |
+| `scripts/kallisto_aggregate.py` | Python script to merge per-sample Kallisto abundance files |
+| `scripts/hybrid_kallisto_aggregate.py` | Aggregation script for hybrid Kallisto output |
+| `scripts/generate_plots.py` | Publication figure generation (6 core plots) |
+| `scripts/generate_plots_v2.py` | Additional publication figures (7 plots) |
+| `pipeline.config` | Central configuration file for all pipeline parameters |
+| `srrAccession.txt` | List of 356 SRA accession IDs |
+
 ## Conclusion
-We deployed an end-to-end, checkpoint-aware RNA-seq pipeline on the OSC Ascend HPC cluster, processing 344 of 356 Ebola virus SRA runs from PRJNA938511. The pipeline produced gene count matrices via both featureCounts (276 samples) and Kallisto (344 samples), variant calls for 344 samples, and DESeq2 exploratory analysis. Cross-validation between the two quantification methods yielded Pearson r = 0.9978 at the sample level. The pipeline architecture, including SLURM array jobs with checkpointing and a sequential coordinator, is reproducible and can be applied to other viral RNA-seq datasets.
+We deployed an end-to-end, checkpoint-aware RNA-seq pipeline on the OSC Ascend HPC cluster, processing 344 of 356 Ebola virus SRA runs from PRJNA938511. The total pipeline data footprint reached 2.7 TB (603 GB trimmed FASTQs, 475 GB deduplicated BAMs). The pipeline produced gene count matrices via both featureCounts (276 samples) and Kallisto (344 samples), variant calls for 344 samples, and DESeq2 exploratory analysis. Cross-validation between the two quantification methods yielded Pearson r = 0.9978 at the sample level. The pipeline architecture, including SLURM array jobs with checkpointing and a sequential coordinator, is reproducible and can be applied to other viral RNA-seq datasets. A hybrid human+Ebola genome alignment pipeline (Steps 15–19) is implemented in the repository and available for future execution.

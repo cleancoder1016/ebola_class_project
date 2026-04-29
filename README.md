@@ -175,6 +175,58 @@ python3 scripts/generate_plots_v2.py  # 7 additional figures
 | 12 | `sample_correlation_scatter.png` | Per-sample Kallisto vs featureCounts (r=0.9978) |
 | 13 | `gene_correlation_matrix.png` | Gene-gene Pearson correlation matrix |
 
+## Hybrid Genome Pipeline (Steps 15–19, Not Executed)
+
+The repository includes a hybrid genome analysis pipeline that re-aligns reads against a combined **human (GRCh38) + Ebola (KJ660346.2)** reference. This separates host and viral reads more accurately. These steps were implemented but not executed in this run to conserve compute time.
+
+| Step | Script | Description |
+|------|--------|-------------|
+| 15 | `15_hybrid_genome_build.sh` | Download GRCh38, concatenate with Ebola ref, build hybrid HISAT2 index |
+| 16 | `16_hybrid_hisat2_align.sh` | Re-align all trimmed reads to hybrid genome, extract Ebola-mapped reads |
+| 17 | `17_hybrid_featurecounts.sh` | featureCounts on hybrid-aligned BAMs |
+| 18 | `18_hybrid_kallisto_quant.sh` | Kallisto quant against hybrid transcriptome index |
+| 19 | `19_hybrid_kallisto_aggregate.sh` | Aggregate hybrid Kallisto output into matrices |
+
+To run the hybrid pipeline:
+```bash
+sbatch coordinator.sh --start-from 15
+```
+
+## All Repository Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/00_setup_conda_env.sh` | Install conda environments (DESeq2, MultiQC) |
+| `scripts/01_sra_to_fastq.sh` | Download SRA and convert to FASTQ (SLURM array) |
+| `scripts/02_fastqc_raw.sh` | FastQC on raw reads (SLURM array) |
+| `scripts/03_trimmomatic.sh` | Adapter trimming and quality filtering (SLURM array) |
+| `scripts/04_fastqc_trimmed.sh` | FastQC on trimmed reads (SLURM array) |
+| `scripts/05_hisat2_index.sh` | Download Ebola reference and build HISAT2 index |
+| `scripts/06_hisat2_align.sh` | HISAT2 alignment + sort + Picard dedup (SLURM array) |
+| `scripts/07_post_align_qc.sh` | flagstat, idxstats, depth stats (SLURM array) |
+| `scripts/08_featurecounts.sh` | Gene-level counting with paired-end validation |
+| `scripts/09_variant_calling.sh` | bcftools mpileup/call per sample (SLURM array) |
+| `scripts/10_deseq2_analysis.sh` | DESeq2 exploratory analysis wrapper |
+| `scripts/11_multiqc_report.sh` | MultiQC aggregated QC report |
+| `scripts/12_kallisto_index.sh` | Build Kallisto transcriptome index (k=31) |
+| `scripts/13_kallisto_quant.sh` | Kallisto pseudo-alignment (SLURM array, 100 bootstraps) |
+| `scripts/14_kallisto_aggregate.sh` | Aggregate Kallisto results wrapper |
+| `scripts/15–19_hybrid_*.sh` | Hybrid genome pipeline (see above) |
+| `scripts/deseq2_analysis.R` | DESeq2 R script (PCA, heatmaps, VST) |
+| `scripts/kallisto_aggregate.py` | Merge per-sample Kallisto abundance files |
+| `scripts/hybrid_kallisto_aggregate.py` | Merge hybrid Kallisto abundance files |
+| `scripts/generate_plots.py` | 6 core publication figures |
+| `scripts/generate_plots_v2.py` | 7 additional publication figures |
+| `scripts/utils.sh` | Shared functions (logging, checkpointing, validation) |
+| `coordinator.sh` | Sequential step orchestrator with `--start-from`/`--stop-at` |
+| `batch_merge_processing.sh` | Concatenate multi-run biological replicates (66 SRR runs) |
+| `submit_merge_jobs.sh` | SLURM submission wrapper for merge jobs |
+| `batch_processing.sh` | Batch SLURM array submission for core pipeline |
+| `one_sample_seq.sh` | Single-sample sequential processing (testing) |
+| `run_and_verify.sh` | Pipeline verification and git push utility |
+| `pipeline.config` | Central configuration (modules, paths, thresholds) |
+| `srrAccession.txt` | 356 SRA accession IDs |
+
 ## Configuration
 
 All pipeline parameters are defined in `pipeline.config`:
