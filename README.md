@@ -1,20 +1,32 @@
 # Ebola RNA-seq Pipeline
 
-An advanced High-Performance Computing (HPC) pipeline for analyzing 356 Sequence Read Archive (SRA) runs from the 2014 West African Ebola Outbreak (PRJNA938511). Built for the Ohio Supercomputer Center (OSC) Ascend/Cardinal clusters, this repository features full automation, SLURM array checkpoints, structured logging, and dual-quantification tracking using both HISAT2+featureCounts and Kallisto.
+An end-to-end HPC pipeline for analyzing 356 SRA runs from the 2014 West African Ebola Outbreak (PRJNA938511). Built for the Ohio Supercomputer Center (OSC) Ascend cluster with SLURM array job parallelization, checkpointing, and dual-quantification (HISAT2 + Kallisto).
 
 ## Overview
 
 | Property | Value |
 |---|---|
 | **Dataset** | PRJNA938511 — 2014 West African Ebola Outbreak |
-| **Scale** | 356 SRR runs (~0.83 TB raw data via batch processing) |
+| **Scale** | 356 SRR runs → 344 processed (~0.83 TB raw data) |
 | **Reference** | KJ660346.2 (Ebola virus Makona) |
-| **HPC** | Ohio Supercomputer Center (Ascend/Cardinal) |
-| **Key Features** | Trimmomatic PE, HISAT2, Kallisto, bcftools, DESeq2, MultiQC |
+| **HPC** | Ohio Supercomputer Center (Ascend) |
+| **Tools** | Trimmomatic, HISAT2, featureCounts, Kallisto, bcftools, DESeq2 |
 
-## Pipeline Architecture & Flowchart
+## Pipeline Results Summary
 
-Our processing architecture utilizes a **Dual-Quantification** approach. Read datasets are both traditionally aligned (for variant calling and standard quantification) and simultaneously pseudo-aligned (for rapid, high-accuracy counting).
+| Metric | Value |
+|---|---|
+| Samples downloaded | 344 / 356 (96.6%) |
+| featureCounts samples | 276 (paired-end validated) |
+| Kallisto samples | 344 |
+| Variant calls | 344 samples |
+| Ebola genes quantified | 7 (NP, VP35, VP40, GP, VP30, VP24, L) |
+| Total Ebola read pairs | 15,131,200 |
+| Samples with detectable virus | 177 / 276 (64.1%) |
+| Kallisto vs featureCounts (per-sample r) | 0.9978 |
+| Generated figures | 13 publication plots |
+
+## Pipeline Architecture
 
 ```mermaid
 flowchart TD
@@ -28,27 +40,27 @@ flowchart TD
         D --> E[04 FastQC Trimmed<br/>SLURM Array]
     end
 
-    subgraph S3["Stage 3 — Traditional Alignment"]
+    subgraph S3["Stage 3 — HISAT2 Alignment"]
         F[05 HISAT2 Index<br/>Download ref + index] --> G
         E --> G[06 HISAT2 Align<br/>SLURM Array · align + dedup]
         G --> H[07 Post-Align QC<br/>flagstat + depths]
-        H --> I[08 featureCounts<br/>Count matrix]
+        H --> I[08 featureCounts<br/>276 paired-end samples]
     end
 
-    subgraph S6["Mufakir's Work: Stage 6 — Kallisto Pseudo-alignment"]
-        K1[12 Kallisto Index<br/>Build Transcriptome k-mers] --> K2
-        E --> K2[13 Kallisto Quant<br/>SLURM Array · Fast pseudo-alignment]
-        K2 --> K3[14 Kallisto Aggregate<br/>Assembler script → Python Pandas]
-    end
-    
-    subgraph S4["Stage 4 — Variant Calling"]
-        G -.-> J[09 Variant Calling<br/>SLURM Array · bcftools]
+    subgraph S6["Stage 4 — Kallisto Pseudo-alignment"]
+        K1[12 Kallisto Index<br/>Build transcriptome k-mers] --> K2
+        E --> K2[13 Kallisto Quant<br/>SLURM Array · 344 samples]
+        K2 --> K3[14 Kallisto Aggregate<br/>Python → count matrix]
     end
 
-    subgraph S5["Stage 5 — Analysis & Reporting"]
-        I --> K[10 DESeq2<br/>DE Analysis + PCA + Heatmaps]
+    subgraph S4["Stage 5 — Variant Calling"]
+        G -.-> J[09 Variant Calling<br/>SLURM Array · bcftools · 344 samples]
+    end
+
+    subgraph S5["Stage 6 — Analysis & Reporting"]
+        I --> K[10 DESeq2<br/>PCA + Heatmaps]
         K3 --> K
-        J -.-> L[11 MultiQC<br/>Aggregated HTML report]
+        J -.-> L[11 MultiQC<br/>Aggregated QC report]
         K -.-> L
     end
 
@@ -62,45 +74,52 @@ flowchart TD
 
 ## Quick Start
 
-### 1. Initial Setup
+### 1. Setup
 ```bash
-# Create the conda environment dependencies
 sbatch scripts/00_setup_conda_env.sh
 ```
 
-### 2. General Orchestration
-The entire pipeline is connected using SLURM `#SBATCH --dependency=afterok` chains to guarantee that jobs only trigger when their upstream requirements successfully complete without errors.
+### 2. Run Full Pipeline
+The coordinator submits steps sequentially to stay under SLURM's 1,000-job limit:
 ```bash
-# Submit all core alignment and variant stages
-bash scripts/run_pipeline.sh
+# Run all steps
+sbatch coordinator.sh
 
-# Monitor active queues
+# Resume from a specific step
+sbatch coordinator.sh --start-from 08
+
+# Run a subset of steps
+sbatch coordinator.sh --start-from 09 --stop-at 14
+```
+
+### 3. Monitor
+```bash
 squeue -u $USER
+tail -f logs/coordinator_<JOBID>.log
 ```
 
-### 3. Kallisto Orchestration (Mufakir Ansari)
-A separate lightweight track ensures ultra-fast transcript quantification via Kallisto.
+### 4. Generate Figures
 ```bash
-# Build Ebola virus index via transcriptome
-sbatch scripts/12_kallisto_index.sh
-
-# Dispatch array to quantify all samples 1-50 concurrently
-sbatch scripts/13_kallisto_quant.sh
-
-# Recompile outputs and cross-validate against featureCounts
-sbatch scripts/14_kallisto_aggregate.sh
+python3 scripts/generate_plots.py     # 6 core figures
+python3 scripts/generate_plots_v2.py  # 7 additional figures
 ```
 
-## Outputs
+## Output Directories
 
-| Output Directory | Description |
+| Directory | Contents |
 |---|---|
-| **kallisto_output/** | Kallisto generated TPM & Gene Count matrices + Validation scatter plots |
-| **counts/** | Traditional `gene_counts_clean.txt` generated using HISAT2/featureCounts |
-| **variants/** | Variant Calling Format (`.vcf`) results tracing specific epidemic variants |
-| **deseq2_results/** | Differential expression mapping, PCA matrices, Distance Heatmaps |
-| **multiqc_report/** | Aggregated full pipeline quality control HTML visualizer |
+| `counts/` | featureCounts gene count matrix (7 genes × 276 samples) |
+| `kallisto_output/` | Kallisto count + TPM matrices (7 genes × 344 samples) |
+| `variants/` | Per-sample VCF files, consensus FASTA, variant summary |
+| `deseq2_results/` | PCA plot, sample distance heatmap, expression distribution |
+| `report/figures/` | 13 publication-quality PNG figures |
+| `logs/` | Per-step SLURM logs |
+| `.checkpoints/` | Checkpoint files for resume support |
 
-## Development & Configuration
+## Configuration
 
-All critical definitions (like node requests, trimming window bounds `TRIM_SLIDINGWINDOW`, or HISAT parameters) reside within `pipeline.config`. The pipeline gracefully handles checkpointing (saving completed sample states in `.checkpoints/`) preventing duplicate billing on HPC nodes during restarts.
+All pipeline parameters (module versions, trimming settings, HISAT2 options, filter thresholds) are defined in `pipeline.config`. The pipeline uses checkpoint files in `.checkpoints/` to skip completed samples on re-runs.
+
+## Contributors
+
+- **Mufakir Ansari** — Kallisto pseudo-alignment pipeline, pipeline orchestration, cross-validation analysis, figure generation
