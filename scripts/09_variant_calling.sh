@@ -48,7 +48,12 @@ BAM="${ALIGNED_DIR}/${SRR}/${SRR}.dedup.bam"
 if [[ ! -f "$BAM" ]]; then
     BAM="${ALIGNED_DIR}/${SRR}/${SRR}.sorted.bam"
 fi
-validate_files "$BAM" "${REFERENCE_FASTA}"
+if [[ ! -f "$BAM" ]]; then
+    log_warn "No BAM found for ${SRR} — skipping variant calling."
+    checkpoint_set "${STEP_NAME}" "$SRR"
+    exit 0
+fi
+validate_files "${REFERENCE_FASTA}"
 
 # ── Output files ────────────────────────────────────────────────────────────
 RAW_VCF="${VARIANTS_DIR}/${SRR}/${SRR}.raw.vcf.gz"
