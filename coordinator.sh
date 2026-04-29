@@ -18,6 +18,7 @@
 #   sbatch coordinator.sh              # Submit as SLURM job (recommended)
 #   bash coordinator.sh                # Run on login node (blocks terminal)
 #   bash coordinator.sh --start-from 06   # Resume from step 06
+#   sbatch coordinator.sh --start-from 09 --stop-at 14  # Run steps 09-14 only
 # ═══════════════════════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -30,11 +31,15 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
 # Parse args
-START_FROM="${1:-}"
 START_STEP=""
-if [[ "$START_FROM" == "--start-from" ]]; then
-    START_STEP="${2:-00}"
-fi
+STOP_STEP=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --start-from) START_STEP="${2:-00}"; shift 2 ;;
+        --stop-at)    STOP_STEP="${2:-99}";  shift 2 ;;
+        *) shift ;;
+    esac
+done
 
 # ── Step definitions (same order as run_pipeline.sh) ────────────────────────
 # Format: STEP_NUM:SCRIPT
@@ -88,6 +93,12 @@ submit_and_wait() {
     # Skip if before start point
     if [[ -n "${START_STEP}" && "${step_num}" < "${START_STEP}" ]]; then
         log "${YELLOW}⏭  Step ${step_num} — Skipped (--start-from ${START_STEP})${NC}"
+        return 0
+    fi
+
+    # Stop if past stop point
+    if [[ -n "${STOP_STEP}" && "${step_num}" > "${STOP_STEP}" ]]; then
+        log "${YELLOW}⏹  Step ${step_num} — Stopped (--stop-at ${STOP_STEP})${NC}"
         return 0
     fi
 
@@ -172,6 +183,9 @@ log "Samples: ${NUM_SAMPLES}"
 log "Branch:  $(git branch --show-current)"
 if [[ -n "${START_STEP}" ]]; then
     log "Starting from: Step ${START_STEP}"
+fi
+if [[ -n "${STOP_STEP}" ]]; then
+    log "Stopping at:   Step ${STOP_STEP}"
 fi
 echo ""
 
