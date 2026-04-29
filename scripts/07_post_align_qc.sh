@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --account=PWSU0516
-#SBATCH --array=1-50%10
+#SBATCH --array=1-356%50
 #SBATCH --output=logs/07_align_qc_%A_%a.log
 # ═══════════════════════════════════════════════════════════════════════════════
 # 07_post_align_qc.sh — Comprehensive post-alignment quality control

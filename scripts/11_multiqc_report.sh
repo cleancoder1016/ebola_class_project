@@ -51,11 +51,11 @@ conda run -n "${CONDA_ENV}" multiqc \
     "${LOG_DIR}" \
     --outdir "${MULTIQC_DIR}" \
     --filename "multiqc_report" \
-    --title "Ebola RNA-seq Pipeline — QC Report (PRJNA938511)" \
-    --comment "50 samples from the 2014 West African Ebola outbreak. Pipeline: SRA → FastQC → Trimmomatic → HISAT2 → Picard → featureCounts → bcftools." \
+    --title "Ebola RNA-seq Pipeline — QC Report (PRJNA938511, 356 samples)" \
+    --comment "356 samples from the 2014 West African Ebola outbreak. Pipeline: SRA → FastQC → Trimmomatic → HISAT2 → Picard → featureCounts → bcftools." \
     --force \
     --no-data-dir \
-    2>&1 | tee "${MULTIQC_DIR}/multiqc.log"
+    2>&1 | tee "${MULTIQC_DIR}/multiqc.log" || true
 
 # ── Validate output ────────────────────────────────────────────────────────
 if [[ -f "${MULTIQC_DIR}/multiqc_report.html" ]]; then

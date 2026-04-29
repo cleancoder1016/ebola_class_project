@@ -41,6 +41,12 @@ declare -a STEPS=(
     "12:12_kallisto_index.sh:dep:00"
     "13:13_kallisto_quant.sh:multi:04,12"
     "14:14_kallisto_aggregate.sh:dep:13"
+    # ── Hybrid genome pipeline (macaque + Ebola) ────────────────────
+    "15:15_hybrid_genome_build.sh:dep:00"
+    "16:16_hybrid_hisat2_align.sh:multi:04,15"
+    "17:17_hybrid_featurecounts.sh:dep:16"
+    "18:18_hybrid_kallisto_quant.sh:multi:04,15"
+    "19:19_hybrid_kallisto_aggregate.sh:dep:18"
 )
 
 # ── Parse arguments ─────────────────────────────────────────────────────────
