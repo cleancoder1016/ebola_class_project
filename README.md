@@ -36,12 +36,15 @@ An end-to-end HPC pipeline for analyzing 356 SRA runs from the 2014 West African
 | Ebola genes quantified | 7 (NP, VP35, VP40, GP, VP30, VP24, L) |
 | Total assigned Ebola read pairs | 15,131,200 |
 | Samples with detectable virus | 177 / 276 (64.1%) |
+| Samples with filtered variants | 119 / 344 (34.6%) |
+| Total filtered SNPs | 33,097 |
+| Total filtered Indels | 4 |
 | Median reads per sample | 17 |
 | Max reads per sample | 3,678,592 (SRR38105630) |
 | Kallisto vs featureCounts correlation (per-sample) | r = 0.9978 |
 | Kallisto vs featureCounts correlation (per-gene) | r = 0.9569 |
 | Gene-gene co-expression | All pairwise r ≥ 0.97 |
-| Publication figures generated | 13 |
+| Publication figures generated | 14 |
 
 ### Per-Gene Expression (featureCounts, 276 samples)
 
@@ -152,7 +155,7 @@ python3 scripts/generate_plots_v2.py  # 7 additional figures
 | `variants/SRR*/` | Per-sample VCF, consensus FASTA, bcftools stats |
 | `variants/variant_summary.tsv` | Variant counts per sample (SNPs, Indels) |
 | `deseq2_results/` | PCA plot, sample distance heatmap, expression distributions |
-| `report/figures/` | 13 publication-quality PNG figures |
+| `report/figures/` | 14 publication-quality PNG figures |
 | `report/mufakir_sections.md` | Report draft sections |
 | `logs/` | Per-step SLURM output logs |
 | `.checkpoints/` | Checkpoint files for resume support |
@@ -166,14 +169,15 @@ python3 scripts/generate_plots_v2.py  # 7 additional figures
 | 3 | `gene_expression_boxplots.png` | log₂(count+1) distribution per gene |
 | 4 | `viral_load_heatmap.png` | Heatmap of 7 genes × top 40 samples |
 | 5 | `kallisto_vs_featurecounts.png` | Per-gene total expression correlation (r=0.9569) |
-| 6 | `pipeline_summary.png` | Summary statistics panel |
-| 7 | `gene_proportions_stacked.png` | Gene composition per sample (% stacked bar) |
-| 8 | `viral_load_histogram.png` | Viral load distribution + detection rate pie |
-| 9 | `sample_dendrogram.png` | Hierarchical clustering of samples (Ward's method) |
-| 10 | `variant_summary.png` | SNPs and Indels per sample |
-| 11 | `assignment_summary_pie.png` | featureCounts assigned vs unassigned reads |
-| 12 | `sample_correlation_scatter.png` | Per-sample Kallisto vs featureCounts (r=0.9978) |
-| 13 | `gene_correlation_matrix.png` | Gene-gene Pearson correlation matrix |
+| 6 | `kallisto_vs_star_scatter.png` | Per-gene log-log scatter (Spearman rho) |
+| 7 | `pipeline_summary.png` | Summary statistics panel |
+| 8 | `gene_proportions_stacked.png` | Gene composition per sample (% stacked bar) |
+| 9 | `viral_load_histogram.png` | Viral load distribution + detection rate pie |
+| 10 | `sample_dendrogram.png` | Hierarchical clustering of samples (Ward's method) |
+| 11 | `variant_summary.png` | SNPs and Indels per sample (119 with variants) |
+| 12 | `assignment_summary_pie.png` | featureCounts assigned vs unassigned reads |
+| 13 | `sample_correlation_scatter.png` | Per-sample Kallisto vs featureCounts (r=0.9978) |
+| 14 | `gene_correlation_matrix.png` | Gene-gene Pearson correlation matrix |
 
 ## Hybrid Genome Pipeline (Steps 15–19, Not Executed)
 

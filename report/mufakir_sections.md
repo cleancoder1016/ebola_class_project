@@ -61,10 +61,10 @@ All pairwise Pearson correlations between the 7 Ebola genes were â‰¥ 0.97 (logâ‚
 DESeq2 was run in exploratory mode (no sample metadata with condition labels was available). Variance-stabilizing transformation was applied. Outputs include: PCA plot, sample-to-sample distance heatmap, top variable genes heatmap, and expression distribution histogram. The PCA plot shows separation between high-viral-load and low-viral-load samples along PC1.
 
 ### Variant Calling
-Variant calling with bcftools completed for 344 samples. Per-sample VCF files, filtered variants, and consensus FASTA sequences were generated.
+Variant calling with bcftools completed for 344 samples. Of these, 119 samples (34.6%) had at least one filtered variant; 225 samples (65.4%) had zero filtered variants. Across all samples, 47,106 raw variant calls were identified, of which 33,101 passed quality filters (QUAL > 20, DP > 10). Of the filtered variants, 33,097 were SNPs and 4 were indels. The maximum number of filtered variants in a single sample was 540. Per-sample VCF files, consensus FASTA sequences, and bcftools stats were generated.
 
 ### Generated Figures
-A total of 13 publication figures were generated:
+A total of 14 publication figures were generated:
 
 | Figure | File |
 |--------|------|
@@ -73,6 +73,7 @@ A total of 13 publication figures were generated:
 | Per-gene expression boxplots | `gene_expression_boxplots.png` |
 | Viral load heatmap (top 40 samples) | `viral_load_heatmap.png` |
 | Kallisto vs featureCounts per-gene | `kallisto_vs_featurecounts.png` |
+| Kallisto vs STAR scatter (log-log) | `kallisto_vs_star_scatter.png` |
 | Pipeline summary statistics | `pipeline_summary.png` |
 | Gene composition stacked bar | `gene_proportions_stacked.png` |
 | Viral load distribution histogram | `viral_load_histogram.png` |
