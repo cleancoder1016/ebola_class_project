@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=08_fcount
-#SBATCH --time=01:00:00
+#SBATCH --time=03:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=32G
@@ -32,8 +32,10 @@ module load "${MOD_CONDA}"
 ensure_dirs "${COUNTS_DIR}"
 
 # ── Build list of all BAM files ─────────────────────────────────────────────
+module load "${MOD_SAMTOOLS}"
 BAM_FILES=()
 MISSING=0
+SKIPPED=0
 
 while IFS= read -r SRR; do
     [[ -z "$SRR" ]] && continue
@@ -42,14 +44,21 @@ while IFS= read -r SRR; do
         BAM="${ALIGNED_DIR}/${SRR}/${SRR}.sorted.bam"
     fi
     if [[ -f "$BAM" ]]; then
-        BAM_FILES+=("$BAM")
+        # Verify BAM has paired-end reads (featureCounts -p crashes on single-end)
+        PAIRED_COUNT=$(samtools view -c -f 1 "$BAM" 2>/dev/null | head -1 || echo 0)
+        if (( PAIRED_COUNT > 0 )); then
+            BAM_FILES+=("$BAM")
+        else
+            log_warn "BAM for ${SRR} has no paired-end reads, skipping."
+            (( SKIPPED++ )) || true
+        fi
     else
         log_warn "BAM not found for ${SRR}, skipping."
         (( MISSING++ )) || true
     fi
 done < "${ACCESSION_LIST}"
 
-log_info "Found ${#BAM_FILES[@]} BAM files (${MISSING} missing)"
+log_info "Found ${#BAM_FILES[@]} valid BAM files (${MISSING} missing, ${SKIPPED} skipped - no PE reads)"
 
 if (( ${#BAM_FILES[@]} == 0 )); then
     die "No BAM files found. Cannot run featureCounts."
