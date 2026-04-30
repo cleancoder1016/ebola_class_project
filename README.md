@@ -86,23 +86,6 @@ The dataset used in this project was deposited to SRA/GEO under BioProject PRJNA
 | Lung (LNG-CD-R) | 1 |
 | **Total (infected SRR runs)** | **301** |
 
-**Table 2. Timepoint distribution across infected samples.**
-
-| Timepoint | Samples |
-|---|---|
-| BL (baseline) | 37 |
-| D1 | 6 |
-| D2 | 6 |
-| D3 | 7 |
-| D4 | 10 |
-| D5 | 6 |
-| D6 | 17 |
-| D7 | 1 |
-| D8 | 3 |
-| D0, Dm04, Dm30 | 5 |
-
----
-
 ## 2. Computational Methods
 
 ### 2.1 Pipeline Overview
